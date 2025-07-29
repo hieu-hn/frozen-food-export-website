@@ -1,5 +1,5 @@
 // worker/src/languages.ts
-import { jsonResponse, errorResponse, type LanguageData } from './utils';
+import { jsonResponse, errorResponse } from './utils';
 import { queryD1 } from './db';
 
 interface Env {
@@ -7,7 +7,7 @@ interface Env {
 }
 
 // Lấy tất cả ngôn ngữ
-export async function getLanguages(_request: Request, env: Env): Promise<Response> {
+export async function getLanguages(request: Request, env: Env): Promise<Response> {
     try {
         const result = await queryD1(env, 'SELECT id, code, name, is_active FROM languages');
         return jsonResponse(result.results);
@@ -19,7 +19,7 @@ export async function getLanguages(_request: Request, env: Env): Promise<Respons
 // Thêm ngôn ngữ mới
 export async function createLanguage(request: Request, env: Env): Promise<Response> {
     try {
-        const { code, name, is_active } = await (request.json() as Promise<LanguageData>); // Type assertion
+        const { code, name, is_active } = await request.json();
         if (!code || !name) {
             return errorResponse('Mã ngôn ngữ và tên là bắt buộc', 400);
         }
@@ -37,7 +37,7 @@ export async function createLanguage(request: Request, env: Env): Promise<Respon
 // Cập nhật ngôn ngữ
 export async function updateLanguage(request: Request, env: Env, languageId: string): Promise<Response> {
     try {
-        const { name, is_active } = await (request.json() as Promise<Partial<LanguageData>>); // Type assertion for partial update
+        const { name, is_active } = await request.json();
         if (!name && is_active === undefined) {
             return errorResponse('Không có dữ liệu cập nhật được cung cấp', 400);
         }
@@ -61,7 +61,7 @@ export async function updateLanguage(request: Request, env: Env, languageId: str
 }
 
 // Xóa ngôn ngữ
-export async function deleteLanguage(_request: Request, env: Env, languageId: string): Promise<Response> {
+export async function deleteLanguage(request: Request, env: Env, languageId: string): Promise<Response> {
     try {
         // D1 sẽ tự động xóa các bản dịch liên quan nhờ ON DELETE CASCADE
         await queryD1(env, 'DELETE FROM languages WHERE id = ?', [languageId]);

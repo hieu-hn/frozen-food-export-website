@@ -1,15 +1,13 @@
 // worker/src/middleware.ts
 import { errorResponse } from './utils';
 import jwt from '@tsndr/cloudflare-worker-jwt';
-import { type JwtPayload } from '@tsndr/cloudflare-worker-jwt'; // Đã sửa tên kiểu
-import { type IRequest } from 'itty-router';
 
 interface Env {
     JWT_SECRET: string;
 }
 
-// Định nghĩa kiểu cho request đã được xác thực, kế thừa từ IRequest của itty-router
-export interface AuthenticatedRequest extends IRequest {
+// Định nghĩa kiểu cho request đã được xác thực
+export interface AuthenticatedRequest extends Request {
     user?: {
         userId: string;
         email: string;
@@ -28,16 +26,9 @@ export async function authenticate(request: AuthenticatedRequest, env: Env): Pro
     const token = authHeader.split(' ')[1];
 
     try {
-        const decodedToken = await jwt.verify(token, env.JWT_SECRET);
-
-        if (!decodedToken || !decodedToken.payload) { // Thêm kiểm tra undefined
-            return errorResponse('Token không hợp lệ hoặc đã hết hạn', 401);
-        }
-
-        const payload = decodedToken.payload as JwtPayload; // Type assertion for payload
-
+        const { payload } = await jwt.verify(token, env.JWT_SECRET);
         // Kiểm tra thời gian hết hạn của token
-        if (payload.exp && payload.exp * 1000 < Date.now()) {
+        if (payload.exp * 1000 < Date.now()) {
             return errorResponse('Token đã hết hạn', 401);
         }
         request.user = payload as AuthenticatedRequest['user'];
@@ -49,8 +40,8 @@ export async function authenticate(request: AuthenticatedRequest, env: Env): Pro
 }
 
 // Middleware phân quyền dựa trên vai trò
-export function authorize(requiredRole: 'admin' | 'editor'): (request: AuthenticatedRequest, _env: Env) => Promise<Response | null> {
-    return async (request: AuthenticatedRequest, _env: Env) => {
+export function authorize(requiredRole: 'admin' | 'editor'): (request: AuthenticatedRequest, env: Env) => Promise<Response | null> {
+    return async (request: AuthenticatedRequest, env: Env) => {
         if (!request.user) {
             // Điều này không nên xảy ra nếu `authenticate` chạy trước
             return errorResponse('Yêu cầu xác thực', 401);

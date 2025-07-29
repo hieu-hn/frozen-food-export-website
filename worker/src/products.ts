@@ -4,8 +4,7 @@ import { queryD1 } from './db';
 
 interface Env {
     DB: D1Database;
-    R2_BUCKET: R2Bucket;
-    R2_PUBLIC_URL: string; // Thêm R2_PUBLIC_URL
+    R2_BUCKET: R2Bucket; // Binding cho R2
 }
 
 // Hàm trợ giúp để lấy ID ngôn ngữ từ code
@@ -15,9 +14,9 @@ async function getLanguageIdByCode(env: Env, code: string): Promise<number | nul
 }
 
 // Lấy tất cả sản phẩm (có thể lọc theo ngôn ngữ)
-export async function getProducts(_request: Request, env: Env): Promise<Response> {
+export async function getProducts(request: Request, env: Env): Promise<Response> {
     try {
-        const url = new URL(_request.url);
+        const url = new URL(request.url);
         const langCode = url.searchParams.get('lang') || 'en'; // Ngôn ngữ mặc định
         const languageId = await getLanguageIdByCode(env, langCode);
 
@@ -46,9 +45,9 @@ export async function getProducts(_request: Request, env: Env): Promise<Response
 }
 
 // Lấy sản phẩm theo ID (có thể lọc theo ngôn ngữ)
-export async function getProductById(_request: Request, env: Env, productId: string): Promise<Response> {
+export async function getProductById(request: Request, env: Env, productId: string): Promise<Response> {
     try {
-        const url = new URL(_request.url);
+        const url = new URL(request.url);
         const langCode = url.searchParams.get('lang') || 'en';
         const languageId = await getLanguageIdByCode(env, langCode);
 
@@ -100,7 +99,9 @@ export async function createProduct(request: Request, env: Env): Promise<Respons
         if (imageFile) {
             const imageFileName = `${productId}_${imageFile.name}`;
             await env.R2_BUCKET.put(imageFileName, await imageFile.arrayBuffer());
-            imageUrl = `${env.R2_PUBLIC_URL}/${imageFileName}`; // Sử dụng R2_PUBLIC_URL
+            // Cần cấu hình R2 public access hoặc sử dụng Cloudflare Workers để phục vụ hình ảnh
+            // Ví dụ: https://your-r2-domain.r2.dev/${imageFileName}
+            imageUrl = `https://${env.R2_BUCKET.name}.r2.dev/${imageFileName}`; // Hoặc domain tùy chỉnh của bạn
         }
 
         await queryD1(
@@ -159,7 +160,7 @@ export async function updateProduct(request: Request, env: Env, productId: strin
             // Tải lên hình ảnh mới
             const imageFileName = `${productId}_${imageFile.name}`;
             await env.R2_BUCKET.put(imageFileName, await imageFile.arrayBuffer());
-            imageUrl = `${env.R2_PUBLIC_URL}/${imageFileName}`; // Sử dụng R2_PUBLIC_URL
+            imageUrl = `https://${env.R2_BUCKET.name}.r2.dev/${imageFileName}`;
         }
 
         const updates: string[] = [];
@@ -210,8 +211,9 @@ export async function updateProduct(request: Request, env: Env, productId: strin
 }
 
 // Xóa sản phẩm
-export async function deleteProduct(_request: Request, env: Env, productId: string): Promise<Response> {
+export async function deleteProduct(request: Request, env: Env, productId: string): Promise<Response> {
     try {
+        // Xóa hình ảnh liên quan từ R2 trước
         const productResult = await queryD1(env, 'SELECT main_image_url FROM products WHERE id = ?', [productId]);
         const product = productResult.results[0] as { main_image_url: string };
 
@@ -222,6 +224,7 @@ export async function deleteProduct(_request: Request, env: Env, productId: stri
             }
         }
 
+        // D1 sẽ tự động xóa các bản dịch nhờ ON DELETE CASCADE
         await queryD1(env, 'DELETE FROM products WHERE id = ?', [productId]);
         return jsonResponse({ message: 'Sản phẩm đã được xóa thành công' }, 200);
     } catch (error: any) {

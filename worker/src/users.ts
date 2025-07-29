@@ -1,20 +1,13 @@
 // worker/src/users.ts
-import { generateUUID, hashPassword, jsonResponse, errorResponse } from './utils'; // Đã xóa UserDB khỏi import
+import { generateUUID, hashPassword, jsonResponse, errorResponse } from './utils';
 import { queryD1 } from './db';
 
 interface Env {
     DB: D1Database;
 }
 
-// Interface cho dữ liệu tạo/cập nhật người dùng
-interface UserCreateData {
-    email: string;
-    password?: string; // Mật khẩu là tùy chọn khi cập nhật
-    role: string;
-}
-
 // Lấy tất cả người dùng (chỉ admin mới có quyền)
-export async function getUsers(_request: Request, env: Env): Promise<Response> {
+export async function getUsers(request: Request, env: Env): Promise<Response> {
     try {
         const usersResult = await queryD1(env, 'SELECT id, email, role, created_at, updated_at FROM users');
         return jsonResponse(usersResult.results);
@@ -26,7 +19,7 @@ export async function getUsers(_request: Request, env: Env): Promise<Response> {
 // Tạo người dùng mới (chỉ admin)
 export async function createUser(request: Request, env: Env): Promise<Response> {
     try {
-        const { email, password, role } = await (request.json() as Promise<UserCreateData>); // Type assertion
+        const { email, password, role } = await request.json();
         if (!email || !password || !role) {
             return errorResponse('Email, mật khẩu và vai trò là bắt buộc', 400);
         }
@@ -49,7 +42,7 @@ export async function createUser(request: Request, env: Env): Promise<Response> 
 // Cập nhật người dùng (chỉ admin)
 export async function updateUser(request: Request, env: Env, userId: string): Promise<Response> {
     try {
-        const { email, password, role } = await (request.json() as Promise<Partial<UserCreateData>>); // Type assertion for partial update
+        const { email, password, role } = await request.json();
         if (!email && !password && !role) {
             return errorResponse('Không có dữ liệu cập nhật được cung cấp', 400);
         }
@@ -77,7 +70,7 @@ export async function updateUser(request: Request, env: Env, userId: string): Pr
 }
 
 // Xóa người dùng (chỉ admin)
-export async function deleteUser(_request: Request, env: Env, userId: string): Promise<Response> {
+export async function deleteUser(request: Request, env: Env, userId: string): Promise<Response> {
     try {
         await queryD1(env, 'DELETE FROM users WHERE id = ?', [userId]);
         return jsonResponse({ message: 'Người dùng đã được xóa thành công' }, 200);

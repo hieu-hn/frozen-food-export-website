@@ -1,8 +1,7 @@
 // worker/src/auth.ts
-import { generateUUID, hashPassword, comparePassword, jsonResponse, errorResponse, type UserAuthData, type UserDB } from './utils';
+import { generateUUID, hashPassword, comparePassword, jsonResponse, errorResponse } from './utils';
 import { queryD1 } from './db';
 import jwt from '@tsndr/cloudflare-worker-jwt';
-import { type JwtPayload } from '@tsndr/cloudflare-worker-jwt'; // Đã sửa tên kiểu
 
 interface Env {
     DB: D1Database;
@@ -12,30 +11,28 @@ interface Env {
 // Xử lý đăng nhập người dùng
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
     try {
-        const { email, password } = await (request.json() as Promise<UserAuthData>); // Type assertion
+        const { email, password } = await request.json();
 
         if (!email || !password) {
             return errorResponse('Email và mật khẩu là bắt buộc', 400);
         }
 
         const userResult = await queryD1(env, 'SELECT id, email, hashed_password, role FROM users WHERE email = ?', [email]);
-        const user: UserDB | undefined = userResult.results[0] as UserDB | undefined; // Type assertion
+        const user = userResult.results[0];
 
         if (!user) {
             return errorResponse('Thông tin đăng nhập không hợp lệ', 401);
         }
 
         // So sánh mật khẩu
-        const isPasswordValid = await comparePassword(password, user.hashed_password);
+        const isPasswordValid = await comparePassword(password, user.hashed_password as string);
 
         if (!isPasswordValid) {
             return errorResponse('Thông tin đăng nhập không hợp lệ', 401);
         }
 
         // Tạo JWT
-        const payload: JwtPayload = { userId: user.id, email: user.email, role: user.role };
-        // Đã sửa: expiresIn được truyền trực tiếp trong đối tượng tùy chọn thứ ba của jwt.sign
-        const token = await jwt.sign(payload, env.JWT_SECRET, { expiresIn: '8h' });
+        const token = await jwt.sign({ userId: user.id, email: user.email, role: user.role }, env.JWT_SECRET, { expiresIn: '8h' }); // Token hết hạn sau 8 giờ
 
         // Trả về token và vai trò
         return jsonResponse({ message: 'Đăng nhập thành công', token, role: user.role }, 200);
@@ -48,7 +45,7 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
 // Xử lý đăng ký người dùng admin ban đầu (chỉ dùng một lần hoặc trong môi trường dev)
 export async function handleRegisterAdmin(request: Request, env: Env): Promise<Response> {
     try {
-        const { email, password } = await (request.json() as Promise<UserAuthData>); // Type assertion
+        const { email, password } = await request.json();
 
         if (!email || !password) {
             return errorResponse('Email và mật khẩu là bắt buộc', 400);

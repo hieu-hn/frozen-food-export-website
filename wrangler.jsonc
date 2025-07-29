@@ -37,8 +37,6 @@
     // Thêm hoặc cập nhật phần này cho biến môi trường (JWT_SECRET và TURNSTILE_SECRET_KEY)
     "vars": {
         "JWT_SECRET": "vi_mot_su_khoi_dau_moi", // THAY THẾ BẰNG MỘT CHUỖI NGẪU NHIÊN, MẠNH MẼ!
-        "TURNSTILE_SECRET_KEY": "", // Giá trị sẽ được đặt bằng `wrangler secret put`
-        //"R2_PUBLIC_URL": "https://pub-84e62f91cb4b47609c0bbc1360362aba.r2.dev/frozen-food-images" // THAY THẾ BẰNG URL R2 CÔNG KHAI CỦA BẠN
-        "R2_PUBLIC_URL": "https://media.itxeasy.com/frozen-food-images" // THAY THẾ BẰNG URL R2 CÔNG KHAI CỦA BẠN
+        "TURNSTILE_SECRET_KEY": "" // Đây là nơi bạn sẽ khai báo biến này. Giá trị sẽ được đặt bằng `wrangler secret put`.
     }
 }

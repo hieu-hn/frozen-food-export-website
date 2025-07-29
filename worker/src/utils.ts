@@ -1,6 +1,6 @@
 // worker/src/utils.ts
-import { v4 as uuidv4 } from 'uuid';
-import * as bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid'; // Cần cài đặt 'uuid': npm install uuid @types/uuid
+import * as bcrypt from 'bcryptjs'; // Cần cài đặt 'bcryptjs': npm install bcryptjs @types/bcryptjs
 
 export function generateUUID(): string {
     return uuidv4();
@@ -36,27 +36,4 @@ export function jsonResponse(data: any, status: number = 200, headers: HeadersIn
 // Hàm tạo phản hồi lỗi JSON
 export function errorResponse(message: string, status: number = 500): Response {
     return jsonResponse({ error: message }, status);
-}
-
-// Interface cho dữ liệu người dùng từ request.json()
-export interface UserAuthData {
-    email: string;
-    password: string;
-}
-
-// Interface cho dữ liệu ngôn ngữ từ request.json()
-export interface LanguageData {
-    code: string;
-    name: string;
-    is_active?: boolean;
-}
-
-// Interface cho dữ liệu người dùng từ D1
-export interface UserDB {
-    id: string;
-    email: string;
-    hashed_password: string;
-    role: string;
-    created_at: string;
-    updated_at: string;
 }

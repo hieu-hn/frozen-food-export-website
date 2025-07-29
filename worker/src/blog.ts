@@ -5,7 +5,6 @@ import { queryD1 } from './db';
 interface Env {
     DB: D1Database;
     R2_BUCKET: R2Bucket;
-    R2_PUBLIC_URL: string; // Thêm R2_PUBLIC_URL
 }
 
 // Hàm trợ giúp để lấy ID ngôn ngữ từ code
@@ -15,9 +14,9 @@ async function getLanguageIdByCode(env: Env, code: string): Promise<number | nul
 }
 
 // Lấy tất cả bài viết blog (có thể lọc theo ngôn ngữ)
-export async function getBlogPosts(_request: Request, env: Env): Promise<Response> {
+export async function getBlogPosts(request: Request, env: Env): Promise<Response> {
     try {
-        const url = new URL(_request.url);
+        const url = new URL(request.url);
         const langCode = url.searchParams.get('lang') || 'en'; // Ngôn ngữ mặc định
         const languageId = await getLanguageIdByCode(env, langCode);
 
@@ -50,9 +49,9 @@ export async function getBlogPosts(_request: Request, env: Env): Promise<Respons
 }
 
 // Lấy bài viết blog theo Slug (có thể lọc theo ngôn ngữ)
-export async function getBlogPostBySlug(_request: Request, env: Env, slug: string): Promise<Response> {
+export async function getBlogPostBySlug(request: Request, env: Env, slug: string): Promise<Response> {
     try {
-        const url = new URL(_request.url);
+        const url = new URL(request.url);
         const langCode = url.searchParams.get('lang') || 'en';
         const languageId = await getLanguageIdByCode(env, langCode);
 
@@ -105,7 +104,7 @@ export async function createBlogPost(request: Request, env: Env): Promise<Respon
         if (imageFile) {
             const imageFileName = `${postId}_${imageFile.name}`;
             await env.R2_BUCKET.put(imageFileName, await imageFile.arrayBuffer());
-            imageUrl = `${env.R2_PUBLIC_URL}/${imageFileName}`; // Sử dụng R2_PUBLIC_URL
+            imageUrl = `https://${env.R2_BUCKET.name}.r2.dev/${imageFileName}`;
         }
 
         await queryD1(
@@ -159,7 +158,7 @@ export async function updateBlogPost(request: Request, env: Env, postId: string)
         } else if (imageFile) {
             const imageFileName = `${postId}_${imageFile.name}`;
             await env.R2_BUCKET.put(imageFileName, await imageFile.arrayBuffer());
-            imageUrl = `${env.R2_PUBLIC_URL}/${imageFileName}`; // Sử dụng R2_PUBLIC_URL
+            imageUrl = `https://${env.R2_BUCKET.name}.r2.dev/${imageFileName}`;
         }
 
         const updates: string[] = [];
@@ -203,7 +202,7 @@ export async function updateBlogPost(request: Request, env: Env, postId: string)
 }
 
 // Xóa bài viết blog
-export async function deleteBlogPost(_request: Request, env: Env, postId: string): Promise<Response> {
+export async function deleteBlogPost(request: Request, env: Env, postId: string): Promise<Response> {
     try {
         const postResult = await queryD1(env, 'SELECT main_image_url FROM blog_posts WHERE id = ?', [postId]);
         const post = postResult.results[0] as { main_image_url: string };
