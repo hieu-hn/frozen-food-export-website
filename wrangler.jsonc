@@ -1,50 +1,44 @@
+// wrangler.jsonc
 /**
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
  */
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "frozen-food-export-website",
-	"main": "worker/index.ts",
-	"compatibility_date": "2025-07-26",
-	"assets": {
-		"not_found_handling": "single-page-application"
-	},
-	"observability": {
-		"enabled": true
-	}
-	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": { "mode": "smart" },
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "frozen-food-export-website",
+    "main": "worker/src/index.ts", // Đã cập nhật để trỏ đến worker/src/index.ts
+    "compatibility_date": "2025-07-29", // Cập nhật ngày tương thích mới nhất
+    "assets": {
+        "not_found_handling": "single-page-application",
+        "directory": "./dist" // ĐÃ CHỈNH SỬA: Thư mục build của frontend React sẽ nằm trực tiếp ở gốc dự án
+    },
+    "observability": {
+        "enabled": true
+    },
 
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
+    // Cấu hình D1 database
+    "d1_databases": [
+        {
+            "binding": "DB", // Tên biến bạn sẽ dùng để truy cập D1 trong Worker (ví dụ: env.DB)
+            "database_name": "frozen-food-db", // Tên database bạn đã tạo
+            "database_id": "054d4197-dc00-4dc0-80db-b49ee332b712", // THAY THẾ BẰNG ID D1 CỦA BẠN
+            "migrations_dir": "./workers/migrations" // Đã cập nhật để trỏ đến thư mục migrations ở gốc dự án
+        }
+    ],
 
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
-	/**
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
+    // Cấu hình R2 bucket
+    "r2_buckets": [
+        {
+            "binding": "R2_BUCKET", // Tên biến bạn sẽ dùng để truy cập R2 trong Worker
+            "bucket_name": "frozen-food-images" // Tên bucket R2 bạn đã tạo
+        }
+    ],
 
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	// "assets": { "directory": "./public/", "binding": "ASSETS" },
-
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+    // Thêm hoặc cập nhật phần này cho biến môi trường (JWT_SECRET và TURNSTILE_SECRET_KEY)
+    "vars": {
+        "JWT_SECRET": "vi_mot_su_khoi_dau_moi", // THAY THẾ BẰNG MỘT CHUỖI NGẪU NHIÊN, MẠNH MẼ!
+        "TURNSTILE_SECRET_KEY": "", // Giá trị sẽ được đặt bằng `wrangler secret put`
+        //"R2_PUBLIC_URL": "https://pub-84e62f91cb4b47609c0bbc1360362aba.r2.dev/frozen-food-images" // THAY THẾ BẰNG URL R2 CÔNG KHAI CỦA BẠN
+        "R2_PUBLIC_URL": "https://media.itxeasy.com/frozen-food-images" // THAY THẾ BẰNG URL R2 CÔNG KHAI CỦA BẠN
+    }
 }

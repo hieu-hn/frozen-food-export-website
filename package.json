@@ -12,8 +12,16 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"@tsndr/cloudflare-worker-jwt": "^3.2.0",
+		"@types/bcryptjs": "^2.4.6",
+		"@types/jsonwebtoken": "^9.0.10",
+		"@types/uuid": "^10.0.0",
+		"bcryptjs": "^3.0.2",
+		"itty-router": "^5.0.20",
+		"jsonwebtoken": "^9.0.2",
 		"react": "^19.1.0",
-		"react-dom": "^19.1.0"
+		"react-dom": "^19.1.0",
+		"uuid": "^11.1.0"
 	},
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "^1.10.1",
